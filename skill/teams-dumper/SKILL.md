@@ -1,9 +1,9 @@
 ---
-name: teams-dumber
+name: teams-dumper
 description: Inspect Microsoft Teams export dumps with DuckDB, explain what each JSONL collection contains, and answer questions about private chats, thread messages, calendar events, and transcript cache entries using reusable query patterns.
 ---
 
-# Teams Dumber
+# Teams Dumper
 
 Use this skill when a user has a Teams export dump and wants to understand the file layout or query it with DuckDB. It is for analysis of local JSONL dumps such as `messages.jsonl`, `people.jsonl`, `chat_thread.jsonl`, `reply_chains.jsonl`, `calendar.jsonl`, and `transcription.jsonl`.
 
