@@ -1,0 +1,9 @@
+node_modules/
+reply_chains.jsonl
+chat_thread.jsonl
+messages.jsonl
+calendar.jsonl
+people.jsonl
+transcription.jsonl
+tmp-dump/
+messages.json

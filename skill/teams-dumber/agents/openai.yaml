@@ -1,0 +1,4 @@
+interface:
+  display_name: "Teams Dumber"
+  short_description: "Query Teams dump files safely with DuckDB."
+  default_prompt: "Explain the Teams dump structure, choose the right JSONL collections, and write DuckDB queries for private chats, thread messages, calendar events, or transcript cache entries."
