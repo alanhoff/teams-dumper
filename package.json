@@ -2,6 +2,7 @@
   "name": "teams-dumper",
   "version": "0.1.0",
   "private": true,
+  "license": "ISC",
   "index": "src/index.mjs",
   "bin": "src/index.mjs",
   "type": "module",

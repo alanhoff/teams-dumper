@@ -1,6 +1,6 @@
 # teams-dumper
 
-`teams-dumper` connects to an already-open Chromium-based browser through the Chrome DevTools Protocol (CDP), reads the local Microsoft Teams web caches from IndexedDB, normalizes the records, and writes six idempotent JSONL collections that are easy to inspect with DuckDB.
+`teams-dumper` connects to an already-open Microsoft Teams desktop app session through the DevTools Protocol (CDP), reads the local Teams caches from IndexedDB, normalizes the records, and writes six idempotent JSONL collections that are easy to inspect with DuckDB.
 
 The main entrypoint is the GitHub repository itself, so the typical usage is:
 
@@ -48,19 +48,18 @@ npx -y skills@latest add https://github.com/alanhoff/teams-dumper --list
 
 - Node.js `>= 22`
 - `npm` / `npx`
-- A Chromium-based browser with remote debugging enabled
-- A logged-in Teams web tab open at `https://teams.microsoft.com/v2/`
+- Microsoft Teams desktop app started with remote debugging enabled
+- A signed-in Teams desktop session with the main app loaded
 
 Important:
 
-- Use the Teams web app in a browser, not the native desktop shell.
+- Use the Teams desktop app.
 - Keep the remote-debugging port bound to `127.0.0.1`.
-- Prefer a dedicated `--user-data-dir` so you do not expose your main browser profile to CDP.
 
 ## Quick Start
 
-1. Start Chrome, Chromium, or Edge with remote debugging enabled.
-2. Sign in to Teams in that browser and keep the `https://teams.microsoft.com/v2/` tab open.
+1. Start Teams in debug mode.
+2. Sign in if needed and wait for the main Teams UI to load.
 3. Run the dumper:
 
 ```bash
@@ -134,88 +133,32 @@ npx -y github:alanhoff/teams-dumper \
   --out-dir ./dump
 ```
 
-## Opening Teams With Remote Debugging
+## Opening Teams In Debug Mode
 
-Use any Chromium-based browser that Playwright can attach to over CDP.
-
-### macOS
-
-Google Chrome:
+MacOS example:
 
 ```bash
-"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-  --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/.cache/teams-dumper-chrome" \
-  "https://teams.microsoft.com/v2/"
+open -a "Microsoft Teams" --args --remote-debugging-port=9222
 ```
 
-Microsoft Edge:
-
-```bash
-"/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" \
-  --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/.cache/teams-dumper-edge" \
-  "https://teams.microsoft.com/v2/"
-```
-
-### Linux
-
-Google Chrome:
-
-```bash
-google-chrome \
-  --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/.cache/teams-dumper-chrome" \
-  "https://teams.microsoft.com/v2/"
-```
-
-Chromium:
-
-```bash
-chromium \
-  --remote-debugging-port=9222 \
-  --user-data-dir="$HOME/.cache/teams-dumper-chromium" \
-  "https://teams.microsoft.com/v2/"
-```
-
-### Windows PowerShell
-
-Google Chrome:
-
-```powershell
-& "$Env:ProgramFiles\Google\Chrome\Application\chrome.exe" `
-  --remote-debugging-port=9222 `
-  --user-data-dir="$Env:TEMP\teams-dumper-chrome" `
-  "https://teams.microsoft.com/v2/"
-```
-
-Microsoft Edge:
-
-```powershell
-& "$Env:ProgramFiles(x86)\Microsoft\Edge\Application\msedge.exe" `
-  --remote-debugging-port=9222 `
-  --user-data-dir="$Env:TEMP\teams-dumper-edge" `
-  "https://teams.microsoft.com/v2/"
-```
-
-After the browser starts:
+After Teams starts:
 
 1. Sign in to Teams if needed.
-2. Wait for the web app to finish loading.
-3. Keep the Teams tab open while the dumper runs.
+2. Wait for the main app window to finish loading.
+3. Keep Teams running while the dumper runs.
 
 ## How It Works
 
 The CLI:
 
 1. Connects to the CDP endpoint.
-2. Finds an open page whose URL starts with `https://teams.microsoft.com/v2/`.
+2. Finds the Teams page inside the running app whose URL starts with `https://teams.microsoft.com/v2/`.
 3. Enumerates IndexedDB databases in that page.
 4. Reads the Teams object stores for conversations, reply chains, calendar, contacts, and profiles.
 5. Normalizes the raw cache into six JSONL collections.
 6. Writes the output files atomically into the target directory.
 
-This is a local cache exporter. It does not call Microsoft Graph or require separate API credentials. If a record was never cached in the browser profile you used, it will not appear in the dump.
+This is a local cache exporter. It does not call Microsoft Graph or require separate API credentials. If a record was never cached in the Teams app session you used, it will not appear in the dump.
 
 ## Querying The Dump With DuckDB
 
@@ -495,14 +438,14 @@ If `parseError` is populated for every row, the cache contains transcript refere
 
 ### `Could not find an open Teams page matching https://teams.microsoft.com/v2/`
 
-The browser is reachable, but there is no matching Teams web page open in that CDP session.
+The Teams app is reachable, but there is no matching Teams page exposed in that CDP session.
 
 Check:
 
-- You opened the browser with `--remote-debugging-port`
+- You opened Teams with `--remote-debugging-port`
 - You are signed in
-- The Teams web app is open at `https://teams.microsoft.com/v2/`
-- You ran the dumper against the same browser instance you opened
+- The main Teams UI is fully loaded
+- You ran the dumper against the same Teams instance you opened
 
 ### `No IndexedDB databases matched prefix ...`
 
@@ -511,19 +454,18 @@ The Teams page was found, but the expected local caches were not available yet.
 Try:
 
 - wait for the app to finish loading
-- reload the Teams tab once
 - open the relevant Teams sections so the cache gets populated
 - rerun with `--verbose`
 
 ### `indexedDB.databases() is not available in the page context`
 
-The attached target does not expose the browser APIs the exporter expects.
+The attached target does not expose the page APIs the exporter expects.
 
 Check:
 
-- you are attached to a real Chromium-based browser
+- you are attached to the Teams app CDP endpoint
 - you are not pointing to a non-page target
-- the Teams tab is a normal web page, not a special shell view
+- the main Teams UI is open
 
 ## Local Development
 
@@ -547,6 +489,10 @@ npm test
 
 ## Notes
 
-- This project reads local browser cache data only.
-- The completeness of the dump depends on what the browser profile has already cached.
+- This project reads local Teams desktop cache data only.
+- The completeness of the dump depends on what the Teams app has already cached.
 - Some conversation titles, channel names, or transcript bodies may be missing from the local caches even when they are visible in the Teams UI.
+
+## License
+
+ISC
